@@ -1,7 +1,9 @@
 
+from sys import path_hooks
 from bs4 import BeautifulSoup
-import requests, openpyxl
-
+import requests, openpyxl,re,pathlib
+import pandas as pd
+import os
 excel = openpyxl.Workbook()
 print(excel.sheetnames)
 sheet = excel.active
@@ -18,6 +20,15 @@ print(heading)
 for tag in soup.select('p a[href]'):
     topic = tag['href']
     sheet.append([topic])
-excel.save("DataSet.xlsx")
+file_name = "DataSet.xlsx"
+excel.save(file_name)
 
+path_of_file = os.getcwd()
+newPath = path_of_file.replace(os.sep, '/')
+newPath = newPath + '/'
+newPath = newPath + file_name
 
+df = pd.DataFrame(pd.read_excel(newPath))
+df = df.T
+print(df)
+df.to_excel('raw_data.xlsx')
