@@ -1,22 +1,33 @@
 from sys import path_hooks
 from turtle import clear
+from types import new_class
 from bs4 import BeautifulSoup
+from operator import is_not
+from functools import partial
+import numpy as np
 import requests, openpyxl,re,pathlib
 import pandas as pd
 import os
-excel = openpyxl.Workbook()
-print(excel.sheetnames)
-sheet = excel.active    
-sheet.title = "Chapters"
-print(excel)
+
 def function(base,first,i):
+    excel = openpyxl.Workbook()
+    sheet = excel.active    
+    sheet.title = "Chapters"
     i = str(i)
+    sheet.title  = sheet.title + i
     url = base+first
     print(url)
     source = requests.get(url)
     source.raise_for_status()
     soup = BeautifulSoup(source.text,'html.parser')
-    heading = soup.find("span",class_="mw-page-title-main").text
+    
+    if soup.find("span",class_="mw-page-title-main"):
+        heading = soup.find("span",class_="mw-page-title-main")
+        print("Yes")
+    else:
+        return
+    heading = heading.text
+    print(type(heading))
     c = 0
     for tag in soup.select('p a[href]'):      
         if c ==0:
@@ -40,21 +51,59 @@ base = "https://en.wikipedia.org"
 path_of_file = os.getcwd()
 newPath = path_of_file.replace(os.sep, '/')
 newPath = newPath + '/'
+directory_path = newPath
+
+temp_csv = pd.DataFrame(list())
+temp_csv.to_csv('raw_data.csv', index=False)
+
 first ="/wiki/React_(JavaScript_library)"
 file_name = function(base,first,0)
 newPath = newPath + file_name
 
+basic_csv = newPath + "/raw_data.csv"
+
+print(newPath)  
 df = pd.DataFrame(pd.read_excel(newPath))
 
-df.filter(like ='#')
-#print(df)
-df.to_excel('raw_data.xlsx')
-df = df.T
+csv = pd.DataFrame(pd.read_excel(newPath))
+temp_csv = pd.concat([temp_csv,csv])
+temp_csv.to_csv('raw_data.csv', index=False)
 
+#df.filter(like ='#')
+#print(df)
+#df.to_excel('raw_data.xlsx')
+
+
+df = df.T
+i = 1
+paths = []
 for row in (df.items()):
-    x = row[1]
-    df1 = x.to_frame().T
-    f = df1.to_string(index=False).replace(" ","")
-    print(f)
-    break
-#print(type(x))
+    if i<3:
+        x = row[1]
+        df1 = x.to_frame().T
+        f = df1.to_string(header=False,index=False).replace(" ","")
+        path = function(base,f,i)
+        csv = pd.DataFrame(pd.read_excel(newPath))
+        temp_csv = pd.concat([temp_csv,csv])
+        temp_csv.to_csv('raw_data.csv', index=False)
+        paths.append(path)
+    else:
+        break
+    i=i+1  
+
+paths = list(filter(None, paths))
+newPath = path_of_file.replace(os.sep, '/')
+i=i+1
+for j in range(len(paths)):
+    if i<10:
+        newPath = paths[j]
+        df = pd.DataFrame(pd.read_excel(newPath))
+        df = df.T
+        for row in (df.items()):
+            if i<10:
+                x = row[1]
+                df1 = x.to_frame().T
+                f = df1.to_string(header=False,index=False).replace("c ","")
+                path = function(base,f,i)
+                paths.append(path)
+                i=i+1 
