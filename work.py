@@ -15,10 +15,7 @@ def function(base,first,i):
     sheet.title = "Chapters"
     i = str(i)
     sheet.title  = sheet.title + i
-    print(excel.sheetnames)
-    print(excel)
     url = base+first
-    print("Inside function")
     print(url)
     source = requests.get(url)
     source.raise_for_status()
@@ -82,15 +79,15 @@ paths = list(filter(None, paths))
 newPath = path_of_file.replace(os.sep, '/')
 i=i+1
 for j in range(len(paths)):
-    if i<100:
+    if i<10:
         newPath = paths[j]
-        print(newPath)
         df = pd.DataFrame(pd.read_excel(newPath))
         df = df.T
         for row in (df.items()):
-            x = row[1]
-            df1 = x.to_frame().T
-            f = df1.to_string(header=False,index=False).replace("c ","")
-            path = function(base,f,i)
-            paths.append(path)
-            i=i+1 
+            if i<10:
+                x = row[1]
+                df1 = x.to_frame().T
+                f = df1.to_string(header=False,index=False).replace("c ","")
+                path = function(base,f,i)
+                paths.append(path)
+                i=i+1 
