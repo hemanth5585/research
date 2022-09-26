@@ -1,0 +1,129 @@
+from email.mime import base
+from sys import path_hooks
+from turtle import clear
+from types import new_class
+from bs4 import BeautifulSoup
+from operator import is_not
+from functools import partial
+import numpy as np
+import requests, openpyxl,re,pathlib
+import pandas as pd
+import os
+import wikipedia as wiki
+class my_dictionary(dict):
+    def __init__(self):
+        self = dict()
+    def add(self, key, value):
+        self[key] = value
+
+dict_obj = my_dictionary()
+dict_obj1 = my_dictionary()
+topics = []
+excel = openpyxl.Workbook()
+sheet = excel.active    
+sheet.title = "Chapters"
+
+
+def function():
+    i = 0
+    for key in list(dict_obj):
+        print("---------------------")
+        print("size of dict")
+        x = key
+        y = dict_obj[x]
+        print(x)
+        print(y)
+        print(len(dict_obj))
+        if dict_obj1[x] is False:
+            dict_obj1[x] = True
+            topics.clear()
+            source = requests.get(y)
+            source.raise_for_status()
+            soup = BeautifulSoup(source.text,'html.parser')    
+            try:
+                if soup.find("span",class_="mw-page-title-main"):
+                    heading = soup.find("span",class_="mw-page-title-main")
+                    heading = heading.text
+                print(heading)
+                summary = wiki.summary(heading)
+                topics.append(heading)
+                topics.append(summary)
+            except:
+                print("Something went wrong")
+            for tag in soup.select('p a[title]'):      
+                topic = tag['title']
+                topics.append(topic)
+            sheet.append(topics)
+            new_df = pd.DataFrame(data=topics)
+            #print(new_df)
+            file_name = "Dataset"
+            extension = ".xlsx"
+            file_name = file_name+extension
+            print(file_name)
+            excel.save(file_name)
+            link_list = []
+            topic_list = []
+            for tag in soup.select('p a'):
+                topic = tag['href']
+                if topic.startswith('#') or topic.startswith('http'):
+                    a = 0
+                else:
+                    #print(topic)
+                    reduced_string = re.sub(r'.', '', topic, count = 6)
+                    result = reduced_string.replace('_', ' ')
+                    topic = base_url + topic
+                    topic_list.append(topic)
+                    link_list.append(result)
+                    """ dict_obj_dup[result]=topic
+                    dict_obj1[result]=False
+            dict_obj.update(dict_obj_dup) """
+            for (z,j) in zip(link_list,topic_list):
+                dict_obj[z] = j
+                dict_obj1[z] = False 
+            df = pd.DataFrame.from_dict(dict_obj, orient ='index') 
+            df.to_excel("output.xlsx")
+
+    print(dict_obj)  
+    return 
+
+base_url = "https://en.wikipedia.org"
+first_url ="/wiki/React_(JavaScript_library)"
+url = base_url+first_url
+print(url)
+source = requests.get(url)
+source.raise_for_status()
+soup = BeautifulSoup(source.text,'html.parser')    
+if soup.find("span",class_="mw-page-title-main"):
+    heading = soup.find("span",class_="mw-page-title-main")
+
+heading = heading.text
+summary = wiki.summary(heading)
+topics.append(heading)
+topics.append(summary)
+for tag in soup.select('p a[title]'):      
+    topic = tag['title']
+    topics.append(topic)
+sheet.append(topics)
+new_df = pd.DataFrame(data=topics)
+#print(new_df)
+file_name = "Dataset"
+extension = ".xlsx"
+file_name = file_name+extension
+print(file_name)
+excel.save(file_name)
+
+title = ""
+for tag in soup.select('p a'):
+    topic = tag['href']
+    if topic.startswith('#') or topic.startswith('http'):
+        a = 0
+    else:
+        #print(topic)
+        reduced_string = re.sub(r'.', '', topic, count = 6)
+        result = reduced_string.replace('_', ' ')
+        topic = base_url + topic
+        dict_obj.add(result,topic)
+        dict_obj1.add(result,False)
+df = pd.DataFrame.from_dict(dict_obj, orient ='index') 
+df.to_excel("output.xlsx")
+function()
